@@ -1,16 +1,17 @@
 # YOLOv5 🚀 by Ultralytics, GPL-3.0 license
 
 import argparse
+from asyncore import write
 import os
 import sys
 from pathlib import Path
+from zlib import Z_BEST_COMPRESSION
 import pyrealsense2 as rs
 import numpy as np
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
 import time
-
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
@@ -33,7 +34,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
         imgsz=(416, 224),  # inference size (height, width)
         conf_thres=0.25,  # confidence threshold
         iou_thres=0.45,  # NMS IOU threshold
-        max_det=1000,  # maximum detections per image
+        max_det=4,  # maximum detections per image
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         view_img=False,  # show results
         save_txt=False,  # save results to *.txt
@@ -104,6 +105,7 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
     align = rs.align(align_to)
 
     intr = profile.get_stream(rs.stream.color).as_video_stream_profile().get_intrinsics()
+    
 
     while(True):
         t0 = time.time()
@@ -172,10 +174,16 @@ def run(weights=ROOT / 'yolov5s.pt',  # model.pt path(s)
                     Xtarget = dist*(x+4 - intr.ppx)/intr.fx - 35 #the distance from RGB camera to realsense center
                     Ytarget = dist*(y+8 - intr.ppy)/intr.fy
                     Ztarget = dist
-                    coordinate_text = "(" + str(round(Xtarget)) + ", " + str(round(Ytarget)) + ", " + str(round(Ztarget)) + ")"
-                    cv2.putText(im0, text=coordinate_text, org=(int((xyxy[0] + xyxy[2])/2), int((xyxy[1] + xyxy[3])/2)),
-                    fontFace = font, fontScale = 1, color=(255,255,255), thickness=2, lineType = cv2.LINE_AA)
-                    #'''
+                    
+                    cv2.putText(im0, "(" + str(round(Ztarget)) + ")" ,(int((xyxy[0] + xyxy[2])/2), int((xyxy[1] + xyxy[3])/2)) , font, 1, (255,255,255), 2, cv2.LINE_AA)
+                    # coordinate_text = "(" + str(round(Xtarget)) + ", " + str(round(Ytarget)) + ", " + str(round(Ztarget)) + ")"
+                    # cv2.putText(im0, text=coordinate_text, org=(int((xyxy[0] + xyxy[2])/2), int((xyxy[1] + xyxy[3])/2)),
+                    # fontFace = font, fontScale = 1, color=(255,255,255), thickness=2, lineType = cv2.LINE_AA)
+                    # #'''
+                    # string = read_ser(MAX_BUFF_LEN)
+                    # if(len(string)):
+                    #     print(string)
+                    
                     '''
                     dist1 = depth_frame.get_distance(xyxy[0] + 4, xyxy[1] + 8)*1000
                     dist2 = depth_frame.get_distance(xyxy[2] + 4, xyxy[3] + 8)*1000
